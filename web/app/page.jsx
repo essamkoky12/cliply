@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import { AnimatePresence, motion } from 'motion/react';
 import Header from '../components/Header';
 import UrlInput from '../components/UrlInput';
 import VideoWorkspace from '../components/VideoWorkspace';
@@ -21,6 +22,7 @@ export default function HomePage() {
   const [url, setUrl] = useState('');
   const [video, setVideo] = useState(null);
   const [playlist, setPlaylist] = useState(null);
+  const [editingLink, setEditingLink] = useState(true);
   const [start, setStart] = useState(0);
   const [end, setEnd] = useState(30);
   const [format, setFormat] = useState('mp4');
@@ -64,6 +66,7 @@ export default function HomePage() {
           setFormat(info.capabilities.formats.includes('mp4') ? 'mp4' : info.capabilities.formats[0]);
         }
       }
+      setEditingLink(false);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -116,6 +119,7 @@ export default function HomePage() {
     fetchVideoInfo(selectedUrl)
       .then((info) => {
         setVideo(info);
+        setEditingLink(false);
         setStart(0);
         setEnd(Math.min(info.duration || 30, 30));
         if (info.capabilities?.formats?.length) {
@@ -126,55 +130,143 @@ export default function HomePage() {
       .finally(() => setLoading(false));
   }
 
+  function resetClip() {
+    jobPoller.current.stop();
+    setVideo(null);
+    setPlaylist(null);
+    setJob(null);
+    setEditingLink(true);
+    setUrl('');
+    setError('');
+    setStart(0);
+    setEnd(30);
+  }
+
+  function editSettings() {
+    setJob(null);
+    setError('');
+  }
+
+  function changeLink() {
+    if (job && ['queued', 'processing'].includes(job.status)) return;
+    jobPoller.current.stop();
+    setVideo(null);
+    setPlaylist(null);
+    setJob(null);
+    setEditingLink(true);
+    setError('');
+    setStart(0);
+    setEnd(30);
+  }
+
+  function handleUrlChange(nextUrl) {
+    setUrl(nextUrl);
+    if (video || playlist) {
+      setVideo(null);
+      setPlaylist(null);
+      setJob(null);
+      setEditingLink(true);
+      setError('');
+    }
+  }
+
   return (
     <div className="page-shell min-h-screen">
       <Header />
       <main className="main">
         <section className="hero">
-          <span className="eyebrow">A better way to clip</span>
-          <h1>Trim video, your way.</h1>
-          <p>Paste a supported video or media link, choose a moment, and export just the part you need.</p>
+          <span className="eyebrow"><span className="eyebrow-dot" />A better way to clip</span>
+          <h1>Keep the moments<br className="mobile-break" /> that matter.</h1>
+          <p>Shape a video or extract audio. One clean workflow, ready when you are.</p>
         </section>
-        <UrlInput value={url} onChange={setUrl} onSubmit={submit} loading={loading} />
-        {error && !video && <div className="status error" role="alert">{error}</div>}
-        {playlist && (
-          <section className="workspace">
-            <h2 className="video-title">{playlist.title}</h2>
-            <div className="video-meta"><span>YouTube playlist</span><span>{playlist.itemCount} videos</span></div>
-            <div className="playlist-list">
-              {playlist.items.map((item) => (
-                <button className="playlist-item" type="button" key={item.id} onClick={() => choosePlaylistItem(item)}>
-                  {item.thumbnail && <Image src={item.thumbnail} alt="" width={88} height={50} unoptimized referrerPolicy="no-referrer" />}
-                  <span>{item.title}</span>
-                </button>
-              ))}
+        <motion.section
+          layout
+          transition={{ type: 'spring', stiffness: 180, damping: 24, mass: 0.85 }}
+          className={`clip-card ${video || playlist ? 'expanded' : ''}`}
+        >
+          <div className="clip-card-content">
+            <div className="source-entry">
+              <div className="source-label-row">
+                <label htmlFor="source-url">{video || playlist ? 'VIDEO URL' : 'Video source'}</label>
+                {video || playlist ? (
+                  !(job && ['queued', 'processing'].includes(job.status)) && (
+                    <button className="change-link-button" type="button" onClick={changeLink}>
+                      <span aria-hidden="true">↻</span> Change link
+                    </button>
+                  )
+                ) : <span>Supported video or direct media URL</span>}
+              </div>
+              <UrlInput
+                value={url}
+                onChange={handleUrlChange}
+                onSubmit={submit}
+                loading={loading}
+                expanded={Boolean((video || playlist) && !editingLink)}
+              />
             </div>
-          </section>
-        )}
-        {video && (
-          <VideoWorkspace
-            video={video}
-            start={start}
-            end={end}
-            setStart={setStart}
-            setEnd={setEnd}
-            format={format}
-            setFormat={setFormat}
-            quality={quality}
-            setQuality={setQuality}
-            audioQuality={audioQuality}
-            setAudioQuality={setAudioQuality}
-            resizePreset={resizePreset}
-            setResizePreset={setResizePreset}
-            resizeMode={resizeMode}
-            setResizeMode={setResizeMode}
-            job={job}
-            onCreate={createJob}
-            onCancel={stopJob}
-            creating={creating}
-            error={error}
-          />
-        )}
+            {!video && error && <div className="source-error" role="alert">{error}</div>}
+            {playlist && (
+              <motion.div
+                key="playlist"
+                className="playlist-panel"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.16 }}
+              >
+                <div className="playlist-heading">
+                  <div>
+                    <span className="section-kicker">PLAYLIST</span>
+                    <h2>{playlist.title}</h2>
+                  </div>
+                  <span className="duration-chip">{playlist.itemCount} videos</span>
+                </div>
+                <div className="playlist-list">
+                  {playlist.items.map((item) => (
+                    <button className="playlist-item" type="button" key={item.id} onClick={() => choosePlaylistItem(item)}>
+                      {item.thumbnail && <Image src={item.thumbnail} alt="" width={88} height={50} unoptimized referrerPolicy="no-referrer" />}
+                      <span>{item.title}</span>
+                      <span className="playlist-arrow" aria-hidden="true">→</span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+            {video && !editingLink && (
+              <motion.div
+                key="video-workspace"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.16 }}
+                className="workspace-wrap"
+              >
+                <VideoWorkspace
+                  video={video}
+                  start={start}
+                  end={end}
+                  setStart={setStart}
+                  setEnd={setEnd}
+                  format={format}
+                  setFormat={setFormat}
+                  quality={quality}
+                  setQuality={setQuality}
+                  audioQuality={audioQuality}
+                  setAudioQuality={setAudioQuality}
+                  resizePreset={resizePreset}
+                  setResizePreset={setResizePreset}
+                  resizeMode={resizeMode}
+                  setResizeMode={setResizeMode}
+                  job={job}
+                  onCreate={createJob}
+                  onCancel={stopJob}
+                  onReset={resetClip}
+                  onEditSettings={editSettings}
+                  creating={creating}
+                  error={error}
+                />
+              </motion.div>
+            )}
+          </div>
+        </motion.section>
         <p className="footer-note">Use only media you have the right to access and process. Provider availability depends on permitted integrations and access rights.</p>
       </main>
     </div>

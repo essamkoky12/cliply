@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import VideoPreview from './VideoPreview';
 import VideoTimeline from './VideoTimeline';
 import TimeInput from './TimeInput';
 import FormatSelector from './FormatSelector';
-import DownloadButton from './DownloadButton';
 import ProcessingStatus from './ProcessingStatus';
+import SettingsModal from './SettingsModal';
 
 function formatDuration(seconds) {
   if (!Number.isFinite(seconds)) return 'Duration verified on acquisition';
@@ -16,170 +17,216 @@ function formatDuration(seconds) {
   return [hours, minutes, remainder].map((part) => String(part).padStart(2, '0')).join(':');
 }
 
+const QUALITY_LABELS = {
+  '360p': '640 × 360',
+  '480p': '854 × 480',
+  '720p': '1280 × 720',
+  '1080p': '1920 × 1080',
+  best: 'Highest suitable source quality'
+};
+
+const RESIZE_LABELS = {
+  original: ['Original', 'Source dimensions'],
+  portrait: ['Portrait', '9:16 · 1080 × 1920'],
+  landscape: ['Landscape', '16:9 · 1920 × 1080'],
+  square: ['Square', '1:1 · 1080 × 1080'],
+  feed: ['Portrait Feed', '4:5 · 1080 × 1350']
+};
+
 export default function VideoWorkspace({
   video, start, end, setStart, setEnd, format, setFormat, quality, setQuality, audioQuality, setAudioQuality,
   resizePreset, setResizePreset, resizeMode, setResizeMode,
-  job, onCreate, onCancel, creating, error
+  job, onCreate, onCancel, onReset, onEditSettings, creating, error
 }) {
-  const [audioQualityOpen, setAudioQualityOpen] = useState(false);
-  useEffect(() => {
-    if (format !== 'mp3') setAudioQualityOpen(false);
-  }, [format]);
+  const [activeModal, setActiveModal] = useState(null);
+  const [triggerRect, setTriggerRect] = useState(null);
   const canAcquire = Boolean(video.capabilities?.acquire);
   const canUseTimeline = Number.isFinite(video.duration) && video.duration > 0;
   const formats = video.capabilities?.formats || [];
+  const sourceDimensions = (video.formats || [])
+    .filter((item) => Number.isSafeInteger(item.width) && Number.isSafeInteger(item.height) && item.width > 0 && item.height > 0)
+    .reduce((largest, item) => {
+      if (!largest || item.width * item.height > largest.width * largest.height) return item;
+      return largest;
+    }, null);
   const activeJob = Boolean(job && ['queued', 'processing'].includes(job.status));
   const canCreate = canAcquire
-    && formats.some((supportedFormat) => ['mp4', 'mp3'].includes(supportedFormat))
+    && formats.includes(format)
     && start >= 0
     && end > start
     && (!canUseTimeline || end <= video.duration)
-    && !activeJob;
+    && !activeJob
+    && !creating;
+  const [resizeLabel, resizeDimensions] = RESIZE_LABELS[resizePreset] || RESIZE_LABELS.original;
+
+  function openModal(type, event) {
+    setTriggerRect(event.currentTarget.getBoundingClientRect());
+    setActiveModal(type);
+  }
+
   return (
-    <section className="workspace" aria-label="Clip editor">
-      <div className="video-head">
-        <VideoPreview video={video} />
-        <div>
-          <h2 className="video-title">{video.title}</h2>
-          <div className="video-meta">
-            <span>{video.provider}</span>
-            <span>{formatDuration(video.duration)}</span>
-          </div>
-          {video.capabilities?.reason && (
-            <p className="capability-note">{video.capabilities.reason}</p>
-          )}
-        </div>
-      </div>
-      <div className="trim-section">
-        <h3 className="section-title">Choose your segment</h3>
-        <VideoTimeline
-          duration={video.duration}
-          start={start}
-          end={end}
-          onStartChange={setStart}
-          onEndChange={setEnd}
-        />
-        <div className="time-grid">
-          <TimeInput label="Start time" value={start} onChange={setStart} disabled={Boolean(job && !['failed', 'cancelled', 'expired', 'completed'].includes(job.status))} />
-          <TimeInput label="End time" value={end} onChange={setEnd} disabled={Boolean(job && !['failed', 'cancelled', 'expired', 'completed'].includes(job.status))} />
-        </div>
-        <div className="format-row">
-          <FormatSelector
-            value={format}
-            onChange={setFormat}
-            outputs={job?.outputs}
-          />
-          {format === 'mp3' && (
-            <div className="audio-quality-picker">
-              <button
-                className="audio-quality-trigger"
-                type="button"
-                aria-haspopup="listbox"
-                aria-expanded={audioQualityOpen}
-                disabled={activeJob}
-                onClick={() => setAudioQualityOpen((open) => !open)}
-              >
-                <span>Audio quality</span>
-                <strong>{audioQuality} kbps</strong>
-                <span className="audio-quality-chevron" aria-hidden="true">{audioQualityOpen ? '−' : '+'}</span>
-              </button>
-              {audioQualityOpen && (
-                <div className="audio-quality-panel" role="listbox" aria-label="MP3 bitrate">
-                  {[
-                    [128, 'Low'],
-                    [192, 'Standard'],
-                    [256, 'High'],
-                    [320, 'Best']
-                  ].map(([bitrate, label]) => (
-                    <button
-                      key={bitrate}
-                      className={`audio-quality-option ${audioQuality === bitrate ? 'active' : ''}`}
-                      type="button"
-                      role="option"
-                      aria-selected={audioQuality === bitrate}
-                      disabled={activeJob}
-                      onClick={() => {
-                        setAudioQuality(bitrate);
-                        setAudioQualityOpen(false);
-                      }}
-                    >
-                      <span>{label}</span>
-                      <strong>{bitrate} kbps</strong>
-                    </button>
-                  ))}
+    <motion.section
+      layout
+      transition={{ type: 'spring', stiffness: 220, damping: 27, mass: 0.9 }}
+      className="workspace"
+      aria-label="Clip editor"
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {job ? (
+          <motion.div
+            key="job"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+          >
+            <ProcessingStatus
+              job={job}
+              format={format}
+              setFormat={setFormat}
+              video={video}
+              onCancel={activeJob ? onCancel : null}
+              onReset={onReset}
+              onEditSettings={!activeJob ? onEditSettings : null}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="editor"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+          >
+            <div className="video-head">
+              <VideoPreview video={video} />
+              <div className="video-details">
+                <div className="video-meta">
+                  <span>{video.provider}</span>
+                  <span className="meta-dot" />
+                  <span>{formatDuration(video.duration)}</span>
                 </div>
+                <h2 className="video-title">{video.title}</h2>
+                {video.formats?.length > 0 && (
+                  <p className="source-capabilities">
+                    Source ready · {formats.map((item) => item.toUpperCase()).join(' and ')} available
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="trim-section">
+              <div className="section-heading">
+                <div>
+                  <span className="section-kicker">01 / CLIP RANGE</span>
+                  <h3 className="section-title">Choose your moment</h3>
+                </div>
+                <span className="duration-chip">{formatDuration(Math.max(0, end - start))}</span>
+              </div>
+              <VideoTimeline
+                duration={video.duration}
+                start={start}
+                end={end}
+                onStartChange={setStart}
+                onEndChange={setEnd}
+              />
+              <div className="time-grid">
+                <TimeInput label="Start time" value={start} onChange={setStart} disabled={activeJob} />
+                <TimeInput label="End time" value={end} onChange={setEnd} disabled={activeJob} />
+              </div>
+            </div>
+
+            <div className="settings-section">
+              <div className="section-heading settings-heading">
+                <div>
+                  <span className="section-kicker">02 / EXPORT</span>
+                  <h3 className="section-title">Output settings</h3>
+                </div>
+              </div>
+              <FormatSelector value={format} onChange={setFormat} formats={formats} />
+
+              <div className="setting-rows">
+                {format === 'mp4' ? (
+                  <>
+                    <div className="setting-row">
+                      <div className="setting-copy">
+                        <span className="setting-title">Video quality</span>
+                        <span className="setting-detail">{QUALITY_LABELS[quality] || QUALITY_LABELS['720p']}</span>
+                      </div>
+                      <button className="setting-trigger" type="button" onClick={(event) => openModal('quality', event)}>
+                        <span>{quality === 'best' ? 'Best Available' : quality}</span><Chevron />
+                      </button>
+                    </div>
+                    <div className="setting-row">
+                      <div className="setting-copy">
+                        <span className="setting-title">Resize & framing</span>
+                        <span className="setting-detail">{resizeDimensions} · {resizeMode}</span>
+                      </div>
+                      <button className="setting-trigger" type="button" onClick={(event) => openModal('resize', event)}>
+                        <span>{resizeLabel}</span><Chevron />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="setting-row">
+                      <div className="setting-copy">
+                        <span className="setting-title">Audio quality</span>
+                        <span className="setting-detail">MP3 · Constant bitrate</span>
+                      </div>
+                      <button className="setting-trigger" type="button" onClick={(event) => openModal('audio', event)}>
+                        <span>{audioQuality} kbps</span><Chevron />
+                      </button>
+                    </div>
+                    <p className="audio-note"><span className="status-dot" /> Audio extraction uses the selected bitrate</p>
+                  </>
+                )}
+              </div>
+
+              {!canAcquire && (
+                <p className="capability-note" role="status">
+                  {video.capabilities?.reason || 'This source cannot currently be processed.'}
+                </p>
               )}
+              {error && <div className="status error" role="alert">{error}</div>}
+
+              <button className="create-button" type="button" disabled={!canCreate} onClick={onCreate}>
+                {creating ? <span className="spinner dark-spinner" /> : <Sparkle />}
+                <span>{creating ? 'Starting clip…' : 'Create Clip'}</span>
+                {!creating && <span className="button-arrow">→</span>}
+              </button>
             </div>
-          )}
-          {format === 'mp4' && (
-            <div className="mp4-options">
-              <label className="quality-control" htmlFor="mp4-quality">
-                <span>MP4 quality</span>
-                <select
-                  id="mp4-quality"
-                  className="quality-select"
-                  value={quality}
-                  onChange={(event) => setQuality(event.target.value)}
-                  disabled={activeJob}
-                >
-                  <option value="360p">360p — 640 × 360</option>
-                  <option value="480p">480p — 854 × 480</option>
-                  <option value="720p">720p — 1280 × 720</option>
-                  <option value="1080p">1080p — 1920 × 1080</option>
-                  <option value="best">Best Available</option>
-                </select>
-              </label>
-              <fieldset className="resize-controls" disabled={activeJob}>
-                <legend>Video dimensions</legend>
-                <p className="resize-hint">Original preserves source dimensions; quality and mode apply to the other presets.</p>
-                <div className="resize-presets">
-                  {[
-                    ['original', 'Original', 'Source dimensions'],
-                    ['portrait', 'Portrait', '9:16 · 1080 × 1920'],
-                    ['landscape', 'Landscape', '16:9 · 1920 × 1080'],
-                    ['square', 'Square', '1:1 · 1080 × 1080'],
-                    ['feed', 'Portrait Feed', '4:5 · 1080 × 1350']
-                  ].map(([preset, label, dimensions]) => (
-                    <button
-                      key={preset}
-                      className={`resize-preset ${resizePreset === preset ? 'active' : ''}`}
-                      type="button"
-                      aria-pressed={resizePreset === preset}
-                      onClick={() => setResizePreset(preset)}
-                    >
-                      <strong>{label}</strong>
-                      <small>{dimensions}</small>
-                    </button>
-                  ))}
-                </div>
-                <label className="quality-control resize-mode-control" htmlFor="resize-mode">
-                  <span>Resizing mode</span>
-                  <select
-                    id="resize-mode"
-                    className="quality-select"
-                    value={resizeMode}
-                    onChange={(event) => setResizeMode(event.target.value)}
-                  >
-                    <option value="fit">Fit — keep all content, pad as needed</option>
-                    <option value="fill">Fill — center-crop edges as needed</option>
-                    <option value="stretch">Stretch — may distort the video</option>
-                  </select>
-                </label>
-              </fieldset>
-            </div>
-          )}
-          <div className="download-actions">
-            <DownloadButton disabled={!canCreate} loading={creating} onClick={onCreate} />
-          </div>
-        </div>
-        {!canAcquire && <p className="timeline-hint">{video.capabilities?.reason || 'This source cannot currently be processed.'}</p>}
-        {error && <div className="status error" role="alert">{error}</div>}
-        <ProcessingStatus
-          job={job}
-          format={format}
-          onCancel={activeJob ? onCancel : null}
-        />
-      </div>
-    </section>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {activeModal && (
+          <SettingsModal
+            type={activeModal}
+            currentQuality={quality}
+            currentAudioQuality={audioQuality}
+            currentPreset={resizePreset}
+            currentMode={resizeMode}
+            thumbnailUrl={video.thumbnail}
+            sourceDimensions={sourceDimensions}
+            triggerRect={triggerRect}
+            onSelectQuality={setQuality}
+            onSelectAudioQuality={setAudioQuality}
+            onSelectPreset={setResizePreset}
+            onSelectMode={setResizeMode}
+            onClose={() => setActiveModal(null)}
+          />
+        )}
+      </AnimatePresence>
+    </motion.section>
   );
+}
+
+function Chevron() {
+  return <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m7 10 5 5 5-5" /></svg>;
+}
+
+function Sparkle() {
+  return <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" /><path d="m19 14 .9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14Z" /></svg>;
 }
