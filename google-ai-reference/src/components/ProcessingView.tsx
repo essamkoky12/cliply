@@ -81,7 +81,7 @@ export const ProcessingView: React.FC<ProcessingViewProps> = ({
   // Real download trigger with safe harmless mockup blob
   const handleDownload = () => {
     const filename = `${metadata.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_clip.${format}`;
-    const dummyContent = `ClipDown Mockup Export\nTitle: ${metadata.title}\nChannel: ${metadata.channel}\nFormat: ${format.toUpperCase()}\nQuality: ${format === 'mp4' ? videoQuality : audioQuality}\nGenerated: ${new Date().toISOString()}`;
+    const dummyContent = `Cliply Mockup Export\nTitle: ${metadata.title}\nChannel: ${metadata.channel}\nFormat: ${format.toUpperCase()}\nQuality: ${format === 'mp4' ? videoQuality : audioQuality}\nGenerated: ${new Date().toISOString()}`;
     const blob = new Blob([dummyContent], {
       type: format === 'mp4' ? 'video/mp4' : 'audio/mpeg',
     });
@@ -98,8 +98,8 @@ export const ProcessingView: React.FC<ProcessingViewProps> = ({
   // Real share trigger (Web Share API with fallback to copy link)
   const handleShare = async () => {
     const shareData = {
-      title: `ClipDown — ${metadata.title}`,
-      text: `Processed clip from "${metadata.title}" by ${metadata.channel} via ClipDown.`,
+      title: `Cliply — ${metadata.title}`,
+      text: `Processed clip from "${metadata.title}" by ${metadata.channel} via Cliply.`,
       url: window.location.href,
     };
 

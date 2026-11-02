@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowRight,
   Clipboard,
@@ -9,18 +9,18 @@ import {
   Film,
   Loader2,
   RefreshCw,
-} from 'lucide-react';
-import { Header } from './components/Header.tsx';
-import { QualityModal } from './components/QualityModal.tsx';
-import { ResizeModal } from './components/ResizeModal.tsx';
-import { AudioQualityModal } from './components/AudioQualityModal.tsx';
-import { ProcessingView } from './components/ProcessingView.tsx';
+} from "lucide-react";
+import { Header } from "./components/Header.tsx";
+import { QualityModal } from "./components/QualityModal.tsx";
+import { ResizeModal } from "./components/ResizeModal.tsx";
+import { AudioQualityModal } from "./components/AudioQualityModal.tsx";
+import { ProcessingView } from "./components/ProcessingView.tsx";
 import {
   DEFAULT_MOCK_METADATA,
   QUALITY_OPTIONS,
   RESIZE_PRESETS,
   AUDIO_QUALITY_OPTIONS,
-} from './constants.ts';
+} from "./constants.ts";
 import {
   FormatType,
   VideoQuality,
@@ -28,27 +28,30 @@ import {
   AspectRatioPreset,
   ResizeMode,
   VideoMetadata,
-} from './types.ts';
+} from "./types.ts";
 
 export default function App() {
   // Input & Validation State (Empty by default with clean initial state)
-  const [urlInput, setUrlInput] = useState('');
+  const [urlInput, setUrlInput] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
   const [hasMetadata, setHasMetadata] = useState(false);
-  const [metadata, setMetadata] = useState<VideoMetadata>(DEFAULT_MOCK_METADATA);
+  const [metadata, setMetadata] = useState<VideoMetadata>(
+    DEFAULT_MOCK_METADATA,
+  );
 
   // Settings State (preserved across format switching)
-  const [format, setFormat] = useState<FormatType>('mp4');
-  const [videoQuality, setVideoQuality] = useState<VideoQuality>('720p');
-  const [aspectPreset, setAspectPreset] = useState<AspectRatioPreset>('original');
-  const [resizeMode, setResizeMode] = useState<ResizeMode>('fit');
-  const [audioQuality, setAudioQuality] = useState<AudioQuality>('192k');
+  const [format, setFormat] = useState<FormatType>("mp4");
+  const [videoQuality, setVideoQuality] = useState<VideoQuality>("720p");
+  const [aspectPreset, setAspectPreset] =
+    useState<AspectRatioPreset>("original");
+  const [resizeMode, setResizeMode] = useState<ResizeMode>("fit");
+  const [audioQuality, setAudioQuality] = useState<AudioQuality>("192k");
 
   // Modals & Origin Tracking
   const [activeModal, setActiveModal] = useState<
-    'none' | 'quality' | 'resize' | 'audioQuality'
-  >('none');
+    "none" | "quality" | "resize" | "audioQuality"
+  >("none");
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
 
   // Button refs for origin-aware modal blooming
@@ -61,9 +64,9 @@ export default function App() {
 
   // Container Measurement for Fluid Content-Aware Resizing (Height & Width)
   const contentRef = useRef<HTMLDivElement>(null);
-  const [contentHeight, setContentHeight] = useState<number | 'auto'>('auto');
+  const [contentHeight, setContentHeight] = useState<number | "auto">("auto");
   const [screenWidth, setScreenWidth] = useState(
-    typeof window !== 'undefined' ? window.innerWidth : 800
+    typeof window !== "undefined" ? window.innerWidth : 800,
   );
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,8 +74,8 @@ export default function App() {
   // Window resize listener
   useEffect(() => {
     const handleResize = () => setScreenWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Continuous content measurement via ResizeObserver
@@ -105,7 +108,7 @@ export default function App() {
       // Focused processing workspace
       return Math.min(500, maxAvailable);
     }
-    if (format === 'mp3') {
+    if (format === "mp3") {
       // Audio focused layout
       return Math.min(520, maxAvailable);
     }
@@ -115,8 +118,8 @@ export default function App() {
 
   // Open modal with bounding rect recorded for spring origin
   const handleOpenModal = (
-    modal: 'quality' | 'resize' | 'audioQuality',
-    buttonRef: React.RefObject<HTMLButtonElement | null>
+    modal: "quality" | "resize" | "audioQuality",
+    buttonRef: React.RefObject<HTMLButtonElement | null>,
   ) => {
     if (buttonRef.current) {
       setTriggerRect(buttonRef.current.getBoundingClientRect());
@@ -132,7 +135,7 @@ export default function App() {
 
     // Validation: Require a URL, do not auto-fill sample data
     if (!url) {
-      setValidationError('Please enter a video URL');
+      setValidationError("Please enter a video URL");
       inputRef.current?.focus();
       return;
     }
@@ -142,24 +145,24 @@ export default function App() {
 
     // Derive realistic metadata dynamically from whatever the user typed/pasted
     setTimeout(() => {
-      let title = 'Building a Modern Web Application';
-      let channel = 'Developer Studio';
-      let source = 'YouTube';
+      let title = "Building a Modern Web Application";
+      let channel = "Developer Studio";
+      let source = "YouTube";
 
       try {
         const parsed = new URL(url);
-        if (parsed.hostname.includes('vimeo')) {
-          source = 'Vimeo';
-          channel = 'Cinema Craft';
-          title = 'Architecture & Space — Kyoto Document';
-        } else if (parsed.hostname.includes('tiktok')) {
-          source = 'TikTok';
-          channel = '@studio.creatives';
-          title = 'Motion Design Systems in Practice';
-        } else if (parsed.hostname.includes('instagram')) {
-          source = 'Instagram';
-          channel = 'Studio Journal';
-          title = 'Sound Design & Modular Synthesis';
+        if (parsed.hostname.includes("vimeo")) {
+          source = "Vimeo";
+          channel = "Cinema Craft";
+          title = "Architecture & Space — Kyoto Document";
+        } else if (parsed.hostname.includes("tiktok")) {
+          source = "TikTok";
+          channel = "@studio.creatives";
+          title = "Motion Design Systems in Practice";
+        } else if (parsed.hostname.includes("instagram")) {
+          source = "Instagram";
+          channel = "Studio Journal";
+          title = "Sound Design & Modular Synthesis";
         }
       } catch {
         // Simple plain link
@@ -168,10 +171,10 @@ export default function App() {
       setMetadata({
         title,
         channel,
-        duration: '12:48',
-        resolution: '1920 × 1080',
+        duration: "12:48",
+        resolution: "1920 × 1080",
         thumbnail:
-          'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
+          "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
         source,
         url,
       });
@@ -190,11 +193,11 @@ export default function App() {
         setUrlInput(text.trim());
         handleFetchMetadata(text.trim());
       } else {
-        setValidationError('Clipboard is empty');
+        setValidationError("Clipboard is empty");
         setTimeout(() => setValidationError(null), 2500);
       }
     } catch {
-      setValidationError('Could not access clipboard');
+      setValidationError("Could not access clipboard");
       setTimeout(() => setValidationError(null), 2500);
     }
   };
@@ -203,15 +206,17 @@ export default function App() {
   const handleReset = () => {
     setHasMetadata(false);
     setIsProcessing(false);
-    setUrlInput('');
+    setUrlInput("");
     setValidationError(null);
-    setActiveModal('none');
+    setActiveModal("none");
   };
 
   // Current label helpers
   const currentQualityObj = QUALITY_OPTIONS.find((q) => q.id === videoQuality);
   const currentResizeObj = RESIZE_PRESETS.find((r) => r.id === aspectPreset);
-  const currentAudioObj = AUDIO_QUALITY_OPTIONS.find((a) => a.id === audioQuality);
+  const currentAudioObj = AUDIO_QUALITY_OPTIONS.find(
+    (a) => a.id === audioQuality,
+  );
 
   return (
     <div className="min-h-screen bg-[#F5F5F2] text-[#171717] flex flex-col justify-between selection:bg-[#171717] selection:text-white">
@@ -227,7 +232,7 @@ export default function App() {
             width: getTargetWidth(),
           }}
           transition={{
-            type: 'spring',
+            type: "spring",
             stiffness: 180,
             damping: 24,
             mass: 0.85,
@@ -241,7 +246,7 @@ export default function App() {
           <div
             ref={contentRef}
             className={`w-full transition-all duration-200 ${
-              hasMetadata || isProcessing ? 'p-5 sm:p-6' : 'p-2.5 sm:p-3'
+              hasMetadata || isProcessing ? "p-5 sm:p-6" : "p-2.5 sm:p-3"
             }`}
           >
             {isProcessing ? (
@@ -285,7 +290,7 @@ export default function App() {
                       if (validationError) setValidationError(null);
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         handleFetchMetadata();
                       }
                     }}
@@ -316,7 +321,10 @@ export default function App() {
                       aria-label="Fetch video metadata"
                     >
                       {isFetchingMetadata ? (
-                        <Loader2 size={13} className="animate-spin text-white" />
+                        <Loader2
+                          size={13}
+                          className="animate-spin text-white"
+                        />
                       ) : (
                         <ArrowRight size={14} />
                       )}
@@ -329,7 +337,7 @@ export default function App() {
                   {validationError && (
                     <motion.div
                       initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                      animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+                      animate={{ opacity: 1, height: "auto", marginTop: 8 }}
                       exit={{ opacity: 0, height: 0, marginTop: 0 }}
                       transition={{ duration: 0.15 }}
                       className="overflow-hidden"
@@ -410,11 +418,11 @@ export default function App() {
                         <div className="grid grid-cols-2 gap-1 bg-[#F0F0ED] p-1 rounded-[14px]">
                           <button
                             type="button"
-                            onClick={() => setFormat('mp4')}
+                            onClick={() => setFormat("mp4")}
                             className={`py-2 px-3 rounded-[10px] text-[13px] font-medium flex items-center justify-center gap-2 transition-all cursor-pointer relative ${
-                              format === 'mp4'
-                                ? 'bg-white text-[#171717] shadow-sm'
-                                : 'text-[#777777] hover:text-[#171717]'
+                              format === "mp4"
+                                ? "bg-white text-[#171717] shadow-sm"
+                                : "text-[#777777] hover:text-[#171717]"
                             }`}
                           >
                             <Film size={14} />
@@ -423,11 +431,11 @@ export default function App() {
 
                           <button
                             type="button"
-                            onClick={() => setFormat('mp3')}
+                            onClick={() => setFormat("mp3")}
                             className={`py-2 px-3 rounded-[10px] text-[13px] font-medium flex items-center justify-center gap-2 transition-all cursor-pointer relative ${
-                              format === 'mp3'
-                                ? 'bg-white text-[#171717] shadow-sm'
-                                : 'text-[#777777] hover:text-[#171717]'
+                              format === "mp3"
+                                ? "bg-white text-[#171717] shadow-sm"
+                                : "text-[#777777] hover:text-[#171717]"
                             }`}
                           >
                             <Music size={14} />
@@ -437,7 +445,7 @@ export default function App() {
                       </div>
 
                       {/* Dynamic Format Settings Section */}
-                      {format === 'mp4' ? (
+                      {format === "mp4" ? (
                         /* MP4 Controls */
                         <motion.div
                           key="mp4-controls"
@@ -454,18 +462,24 @@ export default function App() {
                                 Quality
                               </span>
                               <span className="text-[11px] text-[#777777] font-mono">
-                                {currentQualityObj?.resolution} • {currentQualityObj?.approxSize}
+                                {currentQualityObj?.resolution} •{" "}
+                                {currentQualityObj?.approxSize}
                               </span>
                             </div>
 
                             <button
                               ref={qualityBtnRef}
                               type="button"
-                              onClick={() => handleOpenModal('quality', qualityBtnRef)}
+                              onClick={() =>
+                                handleOpenModal("quality", qualityBtnRef)
+                              }
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white border border-[#171717] text-[#171717] text-[13px] font-medium hover:bg-[#F0F0ED] transition-all shadow-xs active:scale-[0.98] cursor-pointer"
                             >
-                              <span>{currentQualityObj?.label || '720p'}</span>
-                              <ChevronDown size={13} className="text-[#777777]" />
+                              <span>{currentQualityObj?.label || "720p"}</span>
+                              <ChevronDown
+                                size={13}
+                                className="text-[#777777]"
+                              />
                             </button>
                           </div>
 
@@ -483,11 +497,18 @@ export default function App() {
                             <button
                               ref={resizeBtnRef}
                               type="button"
-                              onClick={() => handleOpenModal('resize', resizeBtnRef)}
+                              onClick={() =>
+                                handleOpenModal("resize", resizeBtnRef)
+                              }
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white border border-[#171717] text-[#171717] text-[13px] font-medium hover:bg-[#F0F0ED] transition-all shadow-xs active:scale-[0.98] cursor-pointer"
                             >
-                              <span>{currentResizeObj?.label || 'Original'}</span>
-                              <ChevronDown size={13} className="text-[#777777]" />
+                              <span>
+                                {currentResizeObj?.label || "Original"}
+                              </span>
+                              <ChevronDown
+                                size={13}
+                                className="text-[#777777]"
+                              />
                             </button>
                           </div>
                         </motion.div>
@@ -508,7 +529,8 @@ export default function App() {
                                 Audio Quality
                               </span>
                               <span className="text-[11px] text-[#777777] font-mono">
-                                {currentAudioObj?.label} • {currentAudioObj?.approxSize}
+                                {currentAudioObj?.label} •{" "}
+                                {currentAudioObj?.approxSize}
                               </span>
                             </div>
 
@@ -516,21 +538,33 @@ export default function App() {
                               ref={audioQualityBtnRef}
                               type="button"
                               onClick={() =>
-                                handleOpenModal('audioQuality', audioQualityBtnRef)
+                                handleOpenModal(
+                                  "audioQuality",
+                                  audioQualityBtnRef,
+                                )
                               }
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white border border-[#171717] text-[#171717] text-[13px] font-medium hover:bg-[#F0F0ED] transition-all shadow-xs active:scale-[0.98] cursor-pointer"
                             >
-                              <span>{currentAudioObj?.label || '192 kbps'}</span>
-                              <ChevronDown size={13} className="text-[#777777]" />
+                              <span>
+                                {currentAudioObj?.label || "192 kbps"}
+                              </span>
+                              <ChevronDown
+                                size={13}
+                                className="text-[#777777]"
+                              />
                             </button>
                           </div>
 
                           <div className="px-3.5 py-2.5 rounded-[12px] bg-[#F0F0ED]/70 flex items-center justify-between text-[11px] text-[#777777]">
                             <div className="flex items-center gap-1.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-[#171717]" />
-                              <span>Audio extraction isolated from video stream</span>
+                              <span>
+                                Audio extraction isolated from video stream
+                              </span>
                             </div>
-                            <span className="font-mono text-[10px]">CBR Stereo</span>
+                            <span className="font-mono text-[10px]">
+                              CBR Stereo
+                            </span>
                           </div>
                         </motion.div>
                       )}
@@ -566,16 +600,16 @@ export default function App() {
 
       {/* Floating Animated Modals (Bloom from trigger controls with spring physics) */}
       <AnimatePresence>
-        {activeModal === 'quality' && (
+        {activeModal === "quality" && (
           <QualityModal
             currentQuality={videoQuality}
             triggerRect={triggerRect}
             onSelect={(q) => setVideoQuality(q)}
-            onClose={() => setActiveModal('none')}
+            onClose={() => setActiveModal("none")}
           />
         )}
 
-        {activeModal === 'resize' && (
+        {activeModal === "resize" && (
           <ResizeModal
             currentPreset={aspectPreset}
             currentMode={resizeMode}
@@ -583,16 +617,16 @@ export default function App() {
             triggerRect={triggerRect}
             onSelectPreset={(p) => setAspectPreset(p)}
             onSelectMode={(m) => setResizeMode(m)}
-            onClose={() => setActiveModal('none')}
+            onClose={() => setActiveModal("none")}
           />
         )}
 
-        {activeModal === 'audioQuality' && (
+        {activeModal === "audioQuality" && (
           <AudioQualityModal
             currentQuality={audioQuality}
             triggerRect={triggerRect}
             onSelect={(aq) => setAudioQuality(aq)}
-            onClose={() => setActiveModal('none')}
+            onClose={() => setActiveModal("none")}
           />
         )}
       </AnimatePresence>
@@ -600,7 +634,7 @@ export default function App() {
       {/* Footer */}
       <footer className="w-full py-4 px-6 border-t border-[#E5E5E5]/60 flex items-center justify-between text-[11px] text-[#777777] max-w-4xl mx-auto">
         <div>
-          <span>ClipDown UI Prototype</span>
+          <span>Cliply UI Prototype</span>
           <span className="mx-2 text-[#CCCCCC]">|</span>
           <span className="text-[#999999]">Fluid Layout Engine</span>
         </div>

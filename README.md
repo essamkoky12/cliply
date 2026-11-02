@@ -1,16 +1,16 @@
-# ClipDown
+# Cliply
 
-ClipDown is a web application for inspecting supported media sources and trimming media into MP4 or MP3 clips. The Express API and Next.js frontend run independently. The frontend uses Next.js 15.5.28 rather than the originally requested 14.x line because no patched Next.js 14 release addressed the published critical advisories found during implementation. React remains on 18.
+Cliply is a web application for inspecting supported media sources and trimming media into MP4 or MP3 clips. The Express API and Next.js frontend run independently. The frontend uses Next.js 15.5.28 rather than the originally requested 14.x line because no patched Next.js 14 release addressed the published critical advisories found during implementation. React remains on 18.
 
 ## Provider status
 
-| Provider | Metadata | Playlist metadata | Media acquisition |
-|---|---|---|---|
-| Direct HTTP media | Bounded HTTP range probing and local `ffprobe` | No | Yes, for supported direct media files |
-| YouTube | yt-dlp extractor metadata and actual formats | First 50 flat entries through yt-dlp | yt-dlp when that URL is publicly accessible and supported |
-| Instagram, TikTok, Facebook, X, Vimeo | yt-dlp extractor metadata when supported | No | yt-dlp when that URL is publicly accessible and supported |
+| Provider                              | Metadata                                       | Playlist metadata                    | Media acquisition                                         |
+| ------------------------------------- | ---------------------------------------------- | ------------------------------------ | --------------------------------------------------------- |
+| Direct HTTP media                     | Bounded HTTP range probing and local `ffprobe` | No                                   | Yes, for supported direct media files                     |
+| YouTube                               | yt-dlp extractor metadata and actual formats   | First 50 flat entries through yt-dlp | yt-dlp when that URL is publicly accessible and supported |
+| Instagram, TikTok, Facebook, X, Vimeo | yt-dlp extractor metadata when supported       | No                                   | yt-dlp when that URL is publicly accessible and supported |
 
-yt-dlp supports many extractors, but support is not guaranteed for every URL, region, account state, or media type. Private, removed, age-gated, live, DRM-protected, and otherwise restricted sources can fail or be intentionally rejected. ClipDown does not use browser cookies/session credentials, bypass access controls, or expose extractor format URLs. The Google YouTube Data API key is not used for media acquisition and does not grant access to media files.
+yt-dlp supports many extractors, but support is not guaranteed for every URL, region, account state, or media type. Private, removed, age-gated, live, DRM-protected, and otherwise restricted sources can fail or be intentionally rejected. Cliply does not use browser cookies/session credentials, bypass access controls, or expose extractor format URLs. The Google YouTube Data API key is not used for media acquisition and does not grant access to media files.
 
 Platform metadata comes from yt-dlp, separately from media acquisition. Metadata responses include only safe format summaries (never signed media URLs); the editor exposes MP4/MP3 only when the extractor reports the required streams. Acquisition uses yt-dlp's native downloaders, a per-operation authenticated egress proxy with DNS/IP validation, and the existing local FFmpeg trim/validation pipeline.
 
@@ -55,7 +55,7 @@ Ensure the executable and FFmpeg directories are in the service user's `PATH`, o
 In one terminal:
 
 ```powershell
-cd clipdown\server
+cd cliply\server
 npm install
 Copy-Item .env.example .env
 npm start
@@ -64,7 +64,7 @@ npm start
 In another terminal:
 
 ```powershell
-cd clipdown\web
+cd cliply\web
 npm install
 Copy-Item .env.example .env.local
 npm run dev
@@ -115,4 +115,4 @@ The tests generate local deterministic video/audio fixtures with FFmpeg, verify 
 
 ## Responsible use
 
-Only process content you are authorized to access and modify. ClipDown does not bypass DRM, authentication, provider restrictions, or other technical protections.
+Only process content you are authorized to access and modify. Cliply does not bypass DRM, authentication, provider restrictions, or other technical protections.

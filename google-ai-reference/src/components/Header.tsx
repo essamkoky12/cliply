@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export const Header: React.FC = () => {
   return (
@@ -21,7 +21,7 @@ export const Header: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[14px] font-medium tracking-tight text-[#171717]">
-            ClipDown
+            cliply
           </span>
           <span className="text-[10px] font-medium uppercase tracking-wider text-[#777777] bg-[#F0F0ED] px-1.5 py-0.5 rounded">
             Prototype

@@ -11,7 +11,7 @@ async function request(path, options = {}) {
       cache: 'no-store'
     });
   } catch {
-    throw new Error('Cannot reach the ClipDown API. Check that the backend is running.');
+    throw new Error('Cannot reach the Cliply API. Check that the backend is running.');
   }
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(body?.error?.message || `Request failed (${response.status}).`);

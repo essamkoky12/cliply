@@ -44,7 +44,7 @@ button:disabled { cursor: not-allowed; }
 }
 
 .brand { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 650; letter-spacing: -.35px; }
-.brand-mark { width: 27px; height: 27px; display: grid; place-items: center; color: white; background: var(--ink); border-radius: 8px; }
+.brand-mark { width: 27px; height: 27px; display: block; flex: none; object-fit: contain; }
 .header-note { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
 .header-status-dot, .eyebrow-dot, .status-dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--green); }
 .header-status-dot { box-shadow: 0 0 0 3px rgb(36 134 91 / 10%); }

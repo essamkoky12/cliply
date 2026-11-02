@@ -1,5 +1,5 @@
 {
-  "name": "ClipDown — Fluid Video Clipper",
+  "name": "Cliply — Fluid Video Clipper",
   "description": "A premium, minimal, fluid UI prototype for video clipping and downloading with dynamic container animations and live aspect-ratio resizing.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
